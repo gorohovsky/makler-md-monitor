@@ -137,6 +137,7 @@ Leave `notifier = "console"` to simply print matches to the terminal.
   10 is read as metres (`высота 2` → 200 cm, `высота 2.30` → 230 cm), since no furniture
   dimension is a few centimetres. By default a listing is not rejected for an
   axis the seller never stated (set `unknown_dimension_ok = false` to require every limit).
+  Each axis takes a `max_*_cm`, a `min_*_cm`, or both for a range.
 - **Rate limiting**: if results suddenly come back empty, the site may be throttling — raise
   the delays in `[monitor]` or set a `proxy`.
 

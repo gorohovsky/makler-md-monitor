@@ -42,9 +42,9 @@ def dimensions_match(listing, criteria):
     dimensions = listing.dimensions
     unknown_ok = criteria.unknown_dimension_ok
     return (
-        _axis_within(dimensions.width_cm, criteria.max_width_cm, unknown_ok)
-        and _axis_within(dimensions.height_cm, criteria.max_height_cm, unknown_ok)
-        and _axis_within(dimensions.depth_cm, criteria.max_depth_cm, unknown_ok)
+        _axis_within(dimensions.width_cm, criteria.min_width_cm, criteria.max_width_cm, unknown_ok)
+        and _axis_within(dimensions.height_cm, criteria.min_height_cm, criteria.max_height_cm, unknown_ok)
+        and _axis_within(dimensions.depth_cm, criteria.min_depth_cm, criteria.max_depth_cm, unknown_ok)
     )
 
 
@@ -77,14 +77,14 @@ def _in_target_currency(listing, criteria):
     return round(listing.price * rate, 2) if rate is not None else None
 
 
-def _axis_within(value, maximum, unknown_ok):
-    if maximum is None:
+def _axis_within(value, minimum, maximum, unknown_ok):
+    if minimum is None and maximum is None:
         return True
 
     if value is None:
         return unknown_ok
 
-    return value <= maximum
+    return _within(value, minimum, maximum)
 
 
 def _normalise(name):

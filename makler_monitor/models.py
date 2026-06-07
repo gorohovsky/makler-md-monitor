@@ -63,8 +63,11 @@ class SearchCriteria:
     price_max: float | None = None
     price_currency: str | None = None
     price_rates: dict[str, float] = field(default_factory=dict)
+    min_width_cm: float | None = None
     max_width_cm: float | None = None
+    min_height_cm: float | None = None
     max_height_cm: float | None = None
+    min_depth_cm: float | None = None
     max_depth_cm: float | None = None
     unknown_dimension_ok: bool = True
     max_pages: int = DEFAULT_MAX_PAGES

@@ -122,6 +122,26 @@ def test_dimensions_unknown_rejected_in_strict_mode():
     assert not dimensions_match(make_listing(dimensions=dims(120, 220, None)), criteria)
 
 
+def test_dimensions_minimum_requires_at_least():
+    criteria = make_criteria(min_width_cm=100)
+
+    assert dimensions_match(make_listing(dimensions=dims(width=120)), criteria)
+    assert not dimensions_match(make_listing(dimensions=dims(width=80)), criteria)
+
+
+def test_dimensions_range_requires_within_min_and_max():
+    criteria = make_criteria(min_width_cm=100, max_width_cm=130)
+
+    assert dimensions_match(make_listing(dimensions=dims(width=120)), criteria)
+    assert not dimensions_match(make_listing(dimensions=dims(width=90)), criteria)
+    assert not dimensions_match(make_listing(dimensions=dims(width=140)), criteria)
+
+
+def test_dimensions_unknown_with_minimum_rejected_in_strict_mode():
+    criteria = make_criteria(min_width_cm=100, unknown_dimension_ok=False)
+    assert not dimensions_match(make_listing(dimensions=dims(width=None)), criteria)
+
+
 def test_card_matches_combines_city_and_price():
     criteria = make_criteria(cities=frozenset({'Тирасполь'}), price_max=200, price_currency='usd')
 

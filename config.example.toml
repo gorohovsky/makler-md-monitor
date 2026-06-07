@@ -25,13 +25,17 @@ price_min = 0
 price_max = 8000
 price_currency = "rub"
 
-# Optional maximum dimensions in centimetres, parsed from the free-text description
-# (this is the whole point: makler.md cannot filter on size). A listing passes an axis
-# when its stated size is within the limit. By default an axis the seller did not state
-# is allowed through; set unknown_dimension_ok = false to require every limited axis.
+# Optional dimension limits in centimetres, parsed from the free-text description (this is
+# the whole point: makler.md cannot filter on size). Per axis set a max, a min, or both for
+# a range; a listing passes an axis when its stated size is within them. By default an axis
+# the seller did not state is allowed through; set unknown_dimension_ok = false to require
+# every limited axis.
 max_width_cm = 130
 max_height_cm = 230
 max_depth_cm = 50
+# min_width_cm = 90        # uncomment to require a range, e.g. width 90-130 cm
+# min_height_cm = 180
+# min_depth_cm = 40
 unknown_dimension_ok = true
 
 # How many category pages to scan per check (newest listings sit on page 1).

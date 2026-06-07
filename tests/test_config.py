@@ -13,6 +13,7 @@ keywords = ["шкаф", "купе"]
 price_min = 50
 price_max = 200
 price_currency = "usd"
+min_width_cm = 90
 max_width_cm = 130
 max_height_cm = 230
 max_depth_cm = 50
@@ -46,6 +47,7 @@ def test_loads_full_config(tmp_path):
     assert criteria.keywords == ('шкаф', 'купе')
     assert (criteria.price_min, criteria.price_max, criteria.price_currency) == (50, 200, 'usd')
     assert (criteria.max_width_cm, criteria.max_height_cm, criteria.max_depth_cm) == (130, 230, 50)
+    assert criteria.min_width_cm == 90
     assert criteria.max_pages == 2
     assert criteria.price_rates == {'usd': 16.3, 'eur': 19.16, 'lei': 0.96}
     assert (settings.check_interval_min_seconds, settings.check_interval_max_seconds) == (600, 1200)
