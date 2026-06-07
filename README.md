@@ -5,7 +5,7 @@ appears that matches criteria the site itself cannot filter on:
 
 - **Dimensions** (width / height / depth) parsed from the free-text description — makler.md
   has no size fields, so this is the main reason the tool exists.
-- **Price range** in a chosen currency.
+- **Price range** in a chosen currency (prices in other currencies are converted via rates).
 - **City** (multi-select) within a region.
 - **Keywords** in the title or description.
 
@@ -47,7 +47,7 @@ filters, which keeps the request volume low.
 ## Deployment
 
 ```bash
-git clone <repo-url> makler_monitor && cd makler_monitor
+git clone https://github.com/gorohovsky/makler-md-monitor.git && cd makler-md-monitor
 uv sync                        # create .venv and install dependencies (reproducible via uv.lock)
 cp config.example.toml config.toml
 $EDITOR config.toml            # set your category, filters and notifier
@@ -70,12 +70,22 @@ category = "furniture-and-interior/furniture/wall-units"
 region = "transnistria"            # Приднестровье (default)
 cities = ["Тирасполь", "Бендеры"]  # optional; exact Russian names from the site
 keywords = ["шкаф", "купе"]        # optional
-price_max = 500
-price_currency = "usd"             # rub | usd | eur | lei
+price_max = 8000
+price_currency = "rub"             # rub | usd | eur | lei
+min_width_cm = 90                  # each axis takes a min, a max, or both (a range)
 max_width_cm = 130
 max_height_cm = 230
 max_depth_cm = 50
+
+# convert other-currency prices into price_currency (price_currency per 1 unit):
+[search.price_rates]
+usd = 16.3
+eur = 19.16
+lei = 0.96
 ```
+
+Invalid config is rejected at startup with a clear message — a non-positive or non-numeric
+`price_rates` entry, or a `min_*` greater than its `max_*` (or `price_min > price_max`).
 
 Discover the city names available in your category/region:
 
