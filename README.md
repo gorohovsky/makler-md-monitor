@@ -9,7 +9,8 @@ appears that matches criteria the site itself cannot filter on:
 - **City** (multi-select) within a region.
 - **Keywords** in the title or description.
 
-The region defaults to **Приднестровье / Transnistria** and the site language is Russian.
+Region and language are configurable, defaulting to **Приднестровье / Transnistria** and
+Russian (`ru`).
 
 ## How it works
 
@@ -36,7 +37,7 @@ filters, which keeps the request volume low.
 | `filters.py` | price / city / keyword / dimension predicates |
 | `client.py` | browser-like HTTP client (anti-detection, retries) |
 | `catalog.py` | pages → `Listing`s |
-| `storage.py` | remember seen listing IDs |
+| `storage.py` | remember seen listing IDs and the backlog-sweep position |
 | `notifier.py` | console / Telegram delivery |
 | `monitor.py` | one check cycle |
 | `config.py`, `cli.py` | TOML config and command line |
@@ -116,8 +117,9 @@ uv run python -m makler_monitor list-cities
 uv run python -m makler_monitor watch --config other.toml
 ```
 
-The first run reports every current match and remembers those listings; later runs report
-only newly-posted ones.
+New postings (on page 1) are reported within one interval. The existing backlog is swept a
+few pages per run (`pages_per_batch`), so older matches arrive over the first several runs
+until the whole category has been covered; each listing is reported only once.
 
 ### Running continuously
 
@@ -141,6 +143,10 @@ Leave `notifier = "console"` to simply print matches to the terminal.
 
 ## Notes and limitations
 
+- **Coverage**: page 1 is scanned every run for new listings; the backlog is swept
+  `pages_per_batch` pages per run with a cursor that wraps at the end, so the whole category
+  is covered over time (each listing is tracked by ID and reported once). Set `max_pages` to
+  cap the sweep depth — useful on a very busy category so the cursor wraps regularly.
 - **Currency**: listings use different currencies (rub/usd/eur/lei). Set `[search.price_rates]`
   (price_currency units per 1 unit of each other currency) and the filter converts
   foreign-priced listings into your `price_currency` before checking the range; a currency
@@ -164,3 +170,10 @@ uv run pytest
 
 The suite is fully offline: HTML parsing runs against saved fixtures and the HTTP client is
 tested with a fake session, so no test touches the network.
+
+## Disclaimer
+
+This project was generated with [Claude Code](https://claude.com/claude-code), Anthropic's
+agentic command-line coding tool. Use it responsibly and at your own risk: respect
+makler.md's terms of use, keep the request rate gentle, and verify any listing before acting
+on a notification.
