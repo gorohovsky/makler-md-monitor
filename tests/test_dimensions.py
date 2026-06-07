@@ -38,6 +38,10 @@ CASES = [
     ('габариты 120*220*50', 120, 220, 50),
     ('120 × 220 × 50 см', 120, 220, 50),
     ('1.2х2.2х0.5 м', 120, 220, 50),
+    # Compact axis order varies by seller, so assign by magnitude (largest=height,
+    # smallest=depth, middle=width) — the same physical box whatever the written order.
+    ('220х50х120', 120, 220, 50),
+    ('50х120х220', 120, 220, 50),
     # False positives must NOT be read as dimensions.
     ('Продаю шкаф, цена 900 евро, куплен 3 года назад', None, None, None),
     ('Телефон 373 77 875053, звоните', None, None, None),

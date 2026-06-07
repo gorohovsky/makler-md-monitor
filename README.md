@@ -128,7 +128,10 @@ Leave `notifier = "console"` to simply print matches to the terminal.
 
 - **Currency**: listings use different currencies (rub/usd/eur/lei). The price filter only
   range-checks listings priced in your `price_currency`; others are skipped.
-- **Dimensions** come from free text, so parsing is best-effort. A unit-less decimal below
+- **Dimensions** come from free text, so parsing is best-effort. Labelled values
+  (`ширина 120 см`) are used as-is; an unlabelled `120x220x50` triple is assigned by size
+  (largest = height, smallest = depth, middle = width), since the written order varies — this
+  suits tall, shallow furniture but can mislabel low, wide pieces. A unit-less decimal below
   10 is read as metres (`высота 2.30` → 230 cm). By default a listing is not rejected for an
   axis the seller never stated (set `unknown_dimension_ok = false` to require every limit).
 - **Rate limiting**: if results suddenly come back empty, the site may be throttling — raise

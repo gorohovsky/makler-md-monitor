@@ -4,8 +4,11 @@ makler.md has no structured size fields, so width/height/depth live only in the 
 prose. We recognise two shapes, in order of confidence:
 
 1. Labelled values — "ширина 120 см", "Ш120", "width 130 cm".
-2. Compact triples — "120x220x50" (assumed width x height x depth), used only as a
-   fallback when no labelled value is found, to avoid guessing axis order needlessly.
+2. Compact triples — "120x220x50", used only as a fallback when no labelled value is
+   found. The written axis order varies by seller, so we assign by magnitude rather
+   than position: largest = height, smallest = depth, middle = width. This is
+   order-independent and fits tall, shallow furniture (wardrobes, cabinets); it can
+   mislabel width/height for low, wide pieces.
 
 Units (см/мм/м) are converted to centimetres. A unit-less decimal below 10 is read as
 metres, because sellers write "высота 2.30" meaning 2.3 m; a plain integer stays in cm.
@@ -82,7 +85,10 @@ def _compact(text):
         return {}
 
     unit = match.group(4)
-    return {axis: _to_cm(match.group(i), unit) for i, axis in enumerate(('width', 'height', 'depth'), start=1)}
+    # Sellers order compact triples inconsistently, so assign by size, not position:
+    # smallest is depth, largest is height, the middle value is width.
+    depth, width, height = sorted(_to_cm(match.group(i), unit) for i in (1, 2, 3))
+    return {'width': width, 'height': height, 'depth': depth}
 
 
 def parse_dimensions(text):
