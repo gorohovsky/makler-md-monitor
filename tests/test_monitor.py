@@ -118,3 +118,18 @@ def test_second_check_does_not_renotify(tmp_path):
     monitor.check()
 
     assert len(notifier.sent) == 1
+
+
+def test_a_new_run_does_not_renotify_a_persisted_listing(tmp_path):
+    card = make_card('1')
+    details = {'1': detailed(card, Dimensions(120, 220, 45))}
+
+    first_monitor, _, first_notifier, _ = build([card], details, tmp_path)
+    assert len(first_monitor.check()) == 1
+    assert len(first_notifier.sent) == 1
+
+    # A separate process run: fresh monitor, store and notifier over the same state file.
+    second_monitor, second_catalog, second_notifier, _ = build([card], details, tmp_path)
+    assert second_monitor.check() == []
+    assert second_notifier.sent == []
+    assert second_catalog.detailed_ids == []
