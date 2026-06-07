@@ -1,0 +1,24 @@
+[project]
+name = "makler-monitor"
+version = "0.1.0"
+description = "Monitor makler.md classifieds for new listings matching criteria the site cannot filter on (free-text dimensions, price, city)."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"

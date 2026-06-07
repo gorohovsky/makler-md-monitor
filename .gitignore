@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# uv / virtualenv (uv.lock is committed for reproducible installs)
+.venv/
+
+# Runtime state & user secrets (config.toml may hold a Telegram token)
+seen.json
+config.toml
+*.local.toml
+
+# OS
+.DS_Store
