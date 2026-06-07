@@ -27,11 +27,16 @@ CASES = [
     ('высота 2.2 м', None, 220, None),
     ('ширина 1,2 м', 120, None, None),
     ('глубина 500 мм', None, None, 50),
-    # A unit-less decimal value is metres in furniture ads ("высота 2.30" = 2.3 m).
+    # A unit-less value below 10 is metres ("высота 2" or "высота 2.30"), never cm —
+    # sampling real ads shows unit-less values cluster below 3 or at/above 30, never between.
     ('высота 2.30', None, 230, None),
+    ('высота 2', None, 200, None),
+    ('ширина 1', 100, None, None),
     ('размер 0.46 * 1.34, высота 2.30', None, 230, None),
     ('ширина 1.5', 150, None, None),
     ('глубина 0.5', None, None, 50),
+    ('высота 0.92, глубина 0.32', None, 92, 32),
+    ('Высота 2,10, ширина 1.50', 150, 210, None),
     # Compact NxNxN (assumed width x height x depth) — Cyrillic and Latin separators.
     ('Шкаф-купе 120х220х50', 120, 220, 50),
     ('размеры 120x220x50 см', 120, 220, 50),

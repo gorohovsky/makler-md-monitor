@@ -10,8 +10,8 @@ prose. We recognise two shapes, in order of confidence:
    order-independent and fits tall, shallow furniture (wardrobes, cabinets); it can
    mislabel width/height for low, wide pieces.
 
-Units (см/мм/м) are converted to centimetres. A unit-less decimal below 10 is read as
-metres, because sellers write "высота 2.30" meaning 2.3 m; a plain integer stays in cm.
+Units (см/мм/м) are converted to centimetres. A unit-less value below 10 is read as
+metres ("высота 2" / "высота 2.30" mean ~2 m, never 2 cm); 10 and above is centimetres.
 
 Single-letter labels (ш/в/г) are matched only when an explicit unit follows them
 ("Ш120см" or "В 220 см"), so prose like "в2020 году" is never misread as a height.
@@ -60,8 +60,10 @@ def _to_cm(number, unit):
     if unit:
         return round(value * _UNIT_FACTORS[unit.lower()], 2)
 
-    # Unit-less: a fractional value below 10 is metres ("высота 2.30"); an integer is cm.
-    if value < _BARE_VALUE_IS_METRES_BELOW and value != int(value):
+    # Unit-less: sellers write small numbers in metres ("высота 2" / "высота 2.30") — no
+    # furniture dimension is a few centimetres. Sampling real ads, unit-less values cluster
+    # below 3 (metres) or at/above 30 (cm) with nothing between, so under 10 is metres.
+    if value < _BARE_VALUE_IS_METRES_BELOW:
         return round(value * 100.0, 2)
 
     return round(value, 2)
