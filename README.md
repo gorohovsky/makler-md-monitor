@@ -1,5 +1,144 @@
 # makler-monitor
 
-Monitor [makler.md](https://makler.md) classifieds for new listings matching criteria the
-site itself cannot filter on — free-text **dimensions** (width/height/depth), **price range**,
-and **city** — then get notified when a new match appears. Full documentation below.
+Monitor [makler.md](https://makler.md) classifieds and get notified when a **new** listing
+appears that matches criteria the site itself cannot filter on:
+
+- **Dimensions** (width / height / depth) parsed from the free-text description — makler.md
+  has no size fields, so this is the main reason the tool exists.
+- **Price range** in a chosen currency.
+- **City** (multi-select) within a region.
+- **Keywords** in the title or description.
+
+The region defaults to **Приднестровье / Transnistria** and the site language is Russian.
+
+## How it works
+
+Each check fetches the category's first page(s), keeps the listings it hasn't seen before,
+drops those in the wrong city or outside the price range, then opens the detail page of each
+remaining candidate to read the full description, parse its dimensions, and apply the
+keyword and size filters. New matches go to your notifier and are remembered, so you are
+notified only once.
+
+To stay below the site's radar it behaves like a real browser: one randomly chosen browser
+profile per run (User-Agent + matching client hints), Russian-locale headers, reused
+cookies, a random human pause before every request, exponential backoff on errors, and — in
+`watch` mode — a **randomised** delay between checks rather than a fixed, fingerprintable
+interval. Detail pages are fetched only for listings that already pass the city/price
+filters, which keeps the request volume low.
+
+| Module | Responsibility |
+|--------|----------------|
+| `dimensions.py` | parse width/height/depth from Russian free text |
+| `parser.py` | makler.md HTML → `Listing`, price/currency |
+| `urls.py` | build category-page URLs |
+| `filters.py` | price / city / keyword / dimension predicates |
+| `client.py` | browser-like HTTP client (anti-detection, retries) |
+| `catalog.py` | pages → `Listing`s |
+| `storage.py` | remember seen listing IDs |
+| `notifier.py` | console / Telegram delivery |
+| `monitor.py` | one check cycle |
+| `config.py`, `cli.py` | TOML config and command line |
+
+## Requirements
+
+- [uv](https://docs.astral.sh/uv/) — manages the Python version and dependencies.
+  Install with `curl -LsSf https://astral.sh/uv/install.sh | sh`.
+
+## Deployment
+
+```bash
+git clone <repo-url> makler_monitor && cd makler_monitor
+uv sync                        # create .venv and install dependencies (reproducible via uv.lock)
+cp config.example.toml config.toml
+$EDITOR config.toml            # set your category, filters and notifier
+```
+
+`config.toml` is gitignored because it can hold a Telegram token.
+
+## Configuration
+
+Edit `config.toml`; `config.example.toml` documents every option. There are two sections:
+`[search]` (what to look for) and `[monitor]` (how to run).
+
+To set `category`, browse makler.md to the category you want and copy the URL part after the
+language and region, e.g. for
+`https://makler.md/ru/transnistria/furniture-and-interior/furniture/wall-units`:
+
+```toml
+[search]
+category = "furniture-and-interior/furniture/wall-units"
+region = "transnistria"            # Приднестровье (default)
+cities = ["Тирасполь", "Бендеры"]  # optional; exact Russian names from the site
+keywords = ["шкаф", "купе"]        # optional
+price_max = 500
+price_currency = "usd"             # rub | usd | eur | lei
+max_width_cm = 130
+max_height_cm = 230
+max_depth_cm = 50
+```
+
+Discover the city names available in your category/region:
+
+```bash
+uv run python -m makler_monitor list-cities
+```
+
+and copy the exact names it prints into `cities = [...]`.
+
+## Usage
+
+```bash
+# check once now and print matches (good for cron)
+uv run python -m makler_monitor check
+
+# keep watching, re-checking on a randomised 20–40 min interval
+uv run python -m makler_monitor watch
+
+# list cities currently present in the configured category/region
+uv run python -m makler_monitor list-cities
+
+# use a different config file
+uv run python -m makler_monitor watch --config other.toml
+```
+
+The first run reports every current match and remembers those listings; later runs report
+only newly-posted ones.
+
+### Running continuously
+
+Either keep `watch` running (under `tmux`, `nohup`, or a `systemd` service), or schedule
+`check` with cron. `watch` randomises the gap between checks itself; with cron, rely on the
+per-request delays and avoid a perfectly round schedule.
+
+## Telegram notifications
+
+1. Message [@BotFather](https://t.me/BotFather), send `/newbot`, and copy the token.
+2. Message [@userinfobot](https://t.me/userinfobot) to get your numeric chat id.
+3. In `config.toml`:
+   ```toml
+   [monitor]
+   notifier = "telegram"
+   telegram_bot_token = "123456:ABC-DEF..."
+   telegram_chat_id = "987654321"
+   ```
+
+Leave `notifier = "console"` to simply print matches to the terminal.
+
+## Notes and limitations
+
+- **Currency**: listings use different currencies (rub/usd/eur/lei). The price filter only
+  range-checks listings priced in your `price_currency`; others are skipped.
+- **Dimensions** come from free text, so parsing is best-effort. A unit-less decimal below
+  10 is read as metres (`высота 2.30` → 230 cm). By default a listing is not rejected for an
+  axis the seller never stated (set `unknown_dimension_ok = false` to require every limit).
+- **Rate limiting**: if results suddenly come back empty, the site may be throttling — raise
+  the delays in `[monitor]` or set a `proxy`.
+
+## Development
+
+```bash
+uv run pytest
+```
+
+The suite is fully offline: HTML parsing runs against saved fixtures and the HTTP client is
+tested with a fake session, so no test touches the network.

@@ -1,0 +1,64 @@
+# makler-monitor configuration. Copy to config.toml and edit:
+#   cp config.example.toml config.toml
+# config.toml is gitignored because [monitor].telegram_bot_token is a secret.
+
+[search]
+# Category path on makler.md, the part after the language and region segments.
+# Browse to a category and copy the path, e.g. for
+#   https://makler.md/ru/transnistria/furniture-and-interior/furniture/wall-units
+# use:
+category = "furniture-and-interior/furniture/wall-units"
+
+# Region — a URL segment. "transnistria" is Приднестровье / Prednistrovie (the default).
+region = "transnistria"
+
+# Optional: restrict to specific cities (Russian names exactly as shown on listings).
+# Run `list-cities` to discover what is available. Omit or leave empty for all cities.
+cities = ["Тирасполь", "Бендеры"]
+
+# Optional: only notify when the title or description contains one of these words.
+keywords = ["шкаф", "купе"]
+
+# Optional price range. price_currency is one of: rub, usd, eur, lei.
+# Only listings priced in this currency are range-checked.
+price_min = 0
+price_max = 500
+price_currency = "usd"
+
+# Optional maximum dimensions in centimetres, parsed from the free-text description
+# (this is the whole point: makler.md cannot filter on size). A listing passes an axis
+# when its stated size is within the limit. By default an axis the seller did not state
+# is allowed through; set unknown_dimension_ok = false to require every limited axis.
+max_width_cm = 130
+max_height_cm = 230
+max_depth_cm = 50
+unknown_dimension_ok = true
+
+# How many category pages to scan per check (newest listings sit on page 1).
+max_pages = 1
+
+[monitor]
+# Each wait between checks is drawn at random from this window, so the polling
+# cadence is not a fixed, fingerprintable interval (1200-2400s = 20-40 min).
+check_interval_min_seconds = 1200
+check_interval_max_seconds = 2400
+
+# Where to remember which announcements have already been seen.
+state_path = "seen.json"
+
+# Random, human-like pause before every request, and request resilience.
+min_delay_seconds = 3
+max_delay_seconds = 8
+request_timeout_seconds = 20
+max_retries = 3
+
+# Optional HTTP/HTTPS proxy, e.g. "http://user:pass@host:port". Leave blank for none.
+proxy = ""
+
+# "console" prints to the terminal; "telegram" pushes to your phone.
+notifier = "console"
+
+# For notifier = "telegram": get a token from @BotFather and your chat id from
+# @userinfobot. Keep these secret (config.toml is gitignored).
+telegram_bot_token = ""
+telegram_chat_id = ""
