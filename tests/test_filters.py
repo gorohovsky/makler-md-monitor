@@ -1,6 +1,14 @@
 """Pure matching predicates: price, city, keywords, dimensions, and their conjunction."""
 
-from makler_monitor.filters import city_matches, dimensions_match, keywords_match, matches, price_matches
+from makler_monitor.filters import (
+    card_matches,
+    city_matches,
+    detail_matches,
+    dimensions_match,
+    keywords_match,
+    matches,
+    price_matches
+)
 from makler_monitor.models import Dimensions, Listing, SearchCriteria
 
 
@@ -95,6 +103,21 @@ def test_dimensions_unknown_allowed_by_default():
 def test_dimensions_unknown_rejected_in_strict_mode():
     criteria = make_criteria(max_depth_cm=50, unknown_dimension_ok=False)
     assert not dimensions_match(make_listing(dimensions=dims(120, 220, None)), criteria)
+
+
+def test_card_matches_combines_city_and_price():
+    criteria = make_criteria(cities=frozenset({'Тирасполь'}), price_max=200, price_currency='usd')
+
+    assert card_matches(make_listing(city='Тирасполь', price=100, currency='usd'), criteria)
+    assert not card_matches(make_listing(city='Рыбница', price=100, currency='usd'), criteria)
+
+
+def test_detail_matches_combines_keywords_and_dimensions():
+    criteria = make_criteria(keywords=('шкаф',), max_width_cm=130)
+
+    assert detail_matches(make_listing(description='шкаф', dimensions=dims(width=120)), criteria)
+    no_keyword = make_listing(title='Диван', description='кожаный', dimensions=dims(width=120))
+    assert not detail_matches(no_keyword, criteria)
 
 
 def test_matches_requires_every_criterion():

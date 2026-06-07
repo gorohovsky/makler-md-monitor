@@ -1,8 +1,8 @@
 """Pure predicates deciding whether a listing matches the search criteria.
 
 Each predicate owns one criterion and returns ``True`` when that criterion is not
-configured, so :func:`matches` is simply their conjunction. Add a criterion by adding a
-predicate here and a clause to :func:`matches`.
+configured. :func:`matches` is their conjunction, partitioned into :func:`card_matches`
+(decidable from a listing card) and :func:`detail_matches` (needs the full description).
 """
 
 
@@ -47,14 +47,19 @@ def dimensions_match(listing, criteria):
     )
 
 
+def card_matches(listing, criteria):
+    """Criteria decidable from a listing card alone, before fetching its detail page."""
+    return city_matches(listing, criteria) and price_matches(listing, criteria)
+
+
+def detail_matches(listing, criteria):
+    """Criteria that need the full description: keywords and dimensions."""
+    return keywords_match(listing, criteria) and dimensions_match(listing, criteria)
+
+
 def matches(listing, criteria):
     """True when ``listing`` satisfies every configured criterion."""
-    return (
-        price_matches(listing, criteria)
-        and city_matches(listing, criteria)
-        and keywords_match(listing, criteria)
-        and dimensions_match(listing, criteria)
-    )
+    return card_matches(listing, criteria) and detail_matches(listing, criteria)
 
 
 def _within(value, minimum, maximum):
