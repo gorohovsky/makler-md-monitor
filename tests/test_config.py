@@ -77,6 +77,30 @@ def test_unknown_key_raises(tmp_path):
         load_config(write_config(tmp_path, '[search]\ncategory = "c"\nmax_with_cm = 130\n'))
 
 
+def test_rejects_non_positive_rate(tmp_path):
+    config = '[search]\ncategory = "c"\n\n[search.price_rates]\nusd = 0\n'
+    with pytest.raises(ValueError):
+        load_config(write_config(tmp_path, config))
+
+
+def test_rejects_non_numeric_rate(tmp_path):
+    config = '[search]\ncategory = "c"\n\n[search.price_rates]\nusd = "16.3"\n'
+    with pytest.raises(ValueError):
+        load_config(write_config(tmp_path, config))
+
+
+def test_rejects_inverted_dimension_range(tmp_path):
+    config = '[search]\ncategory = "c"\nmin_width_cm = 150\nmax_width_cm = 130\n'
+    with pytest.raises(ValueError):
+        load_config(write_config(tmp_path, config))
+
+
+def test_rejects_inverted_price_range(tmp_path):
+    config = '[search]\ncategory = "c"\nprice_min = 9000\nprice_max = 8000\n'
+    with pytest.raises(ValueError):
+        load_config(write_config(tmp_path, config))
+
+
 def test_blank_optional_strings_become_none(tmp_path):
     config = '[search]\ncategory = "c"\n\n[monitor]\nproxy = ""\ntelegram_bot_token = ""\n'
     _, settings = load_config(write_config(tmp_path, config))

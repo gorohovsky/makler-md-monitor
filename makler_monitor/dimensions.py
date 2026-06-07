@@ -112,4 +112,8 @@ def parse_dimensions(text):
         return Dimensions()
 
     found = _labelled(text) or _compact(text)
-    return Dimensions(width_cm=found.get('width'), height_cm=found.get('height'), depth_cm=found.get('depth'))
+    return Dimensions(
+        width_cm=found.get('width') or None,
+        height_cm=found.get('height') or None,
+        depth_cm=found.get('depth') or None
+    )

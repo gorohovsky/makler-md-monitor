@@ -32,7 +32,9 @@ def load_config(path):
         if monitor.get(key) == '':
             monitor[key] = None
 
-    return _build(SearchCriteria, search, 'search'), _build(MonitorSettings, monitor, 'monitor')
+    criteria = _build(SearchCriteria, search, 'search')
+    _validate_criteria(criteria)
+    return criteria, _build(MonitorSettings, monitor, 'monitor')
 
 
 def _build(dataclass_type, values, section):
@@ -42,3 +44,19 @@ def _build(dataclass_type, values, section):
         raise ValueError(f'unknown keys in [{section}]: {", ".join(sorted(unknown))}')
 
     return dataclass_type(**values)
+
+
+def _validate_criteria(criteria):
+    for currency, rate in criteria.price_rates.items():
+        if isinstance(rate, bool) or not isinstance(rate, (int, float)) or rate <= 0:
+            raise ValueError(f"price_rates['{currency}'] must be a positive number, got {rate!r}")
+
+    _check_range('price_min', criteria.price_min, 'price_max', criteria.price_max)
+    for axis in ('width', 'height', 'depth'):
+        _check_range(f'min_{axis}_cm', getattr(criteria, f'min_{axis}_cm'),
+                     f'max_{axis}_cm', getattr(criteria, f'max_{axis}_cm'))
+
+
+def _check_range(min_name, minimum, max_name, maximum):
+    if minimum is not None and maximum is not None and minimum > maximum:
+        raise ValueError(f'{min_name} ({minimum}) must not exceed {max_name} ({maximum})')

@@ -51,6 +51,9 @@ CASES = [
     # single-digit cm element ("...х4") is not blown up to metres before the sort.
     ('1.2х2.2х0.5', 120, 220, 50),
     ('200х60х4', 60, 200, 4),
+    # Zero is not a real dimension (placeholder "0х0х0", "ширина 0") -> treated as absent.
+    ('Шкаф 0х0х0', None, None, None),
+    ('ширина 0 см', None, None, None),
     # False positives must NOT be read as dimensions.
     ('Продаю шкаф, цена 900 евро, куплен 3 года назад', None, None, None),
     ('Телефон 373 77 875053, звоните', None, None, None),
