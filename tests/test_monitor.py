@@ -2,6 +2,7 @@
 
 import dataclasses
 
+from makler_monitor.client import FetchError
 from makler_monitor.models import Dimensions, Listing, SearchCriteria
 from makler_monitor.monitor import Monitor
 from makler_monitor.storage import SeenStore
@@ -18,6 +19,9 @@ class FakeCatalog:
 
     def with_details(self, card):
         self.detailed_ids.append(card.listing_id)
+        if card.listing_id not in self._details:
+            raise FetchError(f'detail fetch failed for {card.listing_id}')
+
         return self._details[card.listing_id]
 
 
@@ -133,3 +137,20 @@ def test_a_new_run_does_not_renotify_a_persisted_listing(tmp_path):
     assert second_monitor.check() == []
     assert second_notifier.sent == []
     assert second_catalog.detailed_ids == []
+
+
+def test_a_failed_detail_fetch_does_not_drop_progress_for_other_cards(tmp_path):
+    good = make_card('1')
+    failing = make_card('2')  # no detail entry -> with_details raises FetchError
+    details = {'1': detailed(good, Dimensions(120, 220, 45))}
+    monitor, _, notifier, store = build([good, failing], details, tmp_path)
+
+    assert [listing.listing_id for listing in monitor.check()] == ['1']
+    assert [listing.listing_id for listing in notifier.sent] == ['1']
+    assert store.is_seen('1')        # the good card is recorded despite the later failure
+    assert not store.is_seen('2')    # the failed card stays unseen, to be retried
+
+    # A new run must not re-notify the good card, and retries only the failed one.
+    monitor2, _, notifier2, _ = build([good, failing], details, tmp_path)
+    assert monitor2.check() == []
+    assert notifier2.sent == []

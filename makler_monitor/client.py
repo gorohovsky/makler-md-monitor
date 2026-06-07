@@ -112,5 +112,7 @@ class BrowserClient:
 
 
 def _retry_after_seconds(response):
-    value = response.headers.get('Retry-After')
-    return float(value) if value and value.isdigit() else None
+    try:
+        return float(response.headers.get('Retry-After'))
+    except (TypeError, ValueError):
+        return None

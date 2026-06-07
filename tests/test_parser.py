@@ -19,6 +19,9 @@ PRICE_CASES = [
     ('250 €', 250.0, 'eur'),
     ('300 евро', 300.0, 'eur'),
     ('100 $', 100.0, 'usd'),
+    ('1 300 000 руб', 1300000.0, 'rub'),
+    ('1 000 - 2 000 lei', 1000.0, 'lei'),
+    ('450,50 lei', 450.0, 'lei'),
     ('Договорная', None, None),
     ('', None, None),
     (None, None, None),
@@ -51,6 +54,15 @@ def test_listing_card_fields():
     assert 'ширина 190 см высота 215 см' in card.snippet
     # Dimensions are parsed later, from the fuller detail-page description.
     assert card.dimensions.is_empty
+
+
+def test_listing_title_falls_back_to_link_text_when_title_attr_is_blank():
+    card_html = (
+        '<article id="tr_an-9">'
+        '<a class="ls-detail_anUrl" href="/ru/x/an/9" title="   "><span>Реальный шкаф</span></a>'
+        '</article>'
+    )
+    assert parse_listings(card_html)[0].title == 'Реальный шкаф'
 
 
 def test_parse_description_from_detail_page():

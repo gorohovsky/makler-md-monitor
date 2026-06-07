@@ -45,9 +45,14 @@ def _watch(monitor, settings):
     print('Watching makler.md — press Ctrl-C to stop.')
     try:
         while True:
-            found = monitor.check()
+            try:
+                found = monitor.check()
+                print(f'{len(found)} new match(es).')
+            except Exception as error:
+                print(f'check failed, will retry next cycle: {error}')
+
             wait_seconds = next_interval(settings)
-            print(f'{len(found)} new match(es). Next check in {wait_seconds / 60:.0f} min.')
+            print(f'Next check in {wait_seconds / 60:.0f} min.')
             time.sleep(wait_seconds)
     except KeyboardInterrupt:
         print('\nStopped.')

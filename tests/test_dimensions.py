@@ -14,9 +14,13 @@ CASES = [
     ('ширина: 120, высота: 220, глубина: 50', 120, 220, 50),
     # Multi-letter abbreviations with a trailing dot.
     ('шир. 120 выс. 220 глуб. 50', 120, 220, 50),
-    # Single-letter labels: spaced (with unit) and attached (without).
+    # Single-letter labels require a unit (spaced or attached) so prose isn't misread.
     ('Ш 120 см В 220 см Г 50 см', 120, 220, 50),
-    ('Ш120 В220 Г50', 120, 220, 50),
+    ('Ш120см В220см Г50см', 120, 220, 50),
+    # ...so bare single-letter-plus-number prose is NOT read as a dimension.
+    ('куплен в2020 году', None, None, None),
+    ('дешевле в2 раза', None, None, None),
+    ('г.50 в адресе', None, None, None),
     # English labels appear occasionally in seller text.
     ('width 130 cm, height 230 cm, depth 50 cm', 130, 230, 50),
     # Unit conversion: metres and millimetres, decimal point and comma.

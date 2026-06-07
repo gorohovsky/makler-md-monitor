@@ -18,11 +18,14 @@ class Catalog:
         self._client = client
 
     def recent_listings(self, criteria):
-        """Listing cards from the first ``criteria.max_pages`` category pages."""
+        """De-duplicated listing cards from the first ``criteria.max_pages`` category pages."""
+        seen_ids = set()
         listings = []
         for page in range(1, criteria.max_pages + 1):
-            html = self._client.get(category_url(criteria, page))
-            listings.extend(parse_listings(html))
+            for listing in parse_listings(self._client.get(category_url(criteria, page))):
+                if listing.listing_id not in seen_ids:
+                    seen_ids.add(listing.listing_id)
+                    listings.append(listing)
 
         return listings
 

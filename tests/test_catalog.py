@@ -33,14 +33,16 @@ def test_recent_listings_parses_one_category_page():
     assert any(listing.listing_id == '65036' for listing in listings)
 
 
-def test_recent_listings_walks_each_page():
+def test_recent_listings_walks_each_page_and_dedupes_repeats():
     criteria = SearchCriteria(category='furniture-and-interior/furniture/wall-units', max_pages=2)
+    # An out-of-range page is clamped by the site, so page 2 repeats page 1's listings.
     pages = {category_url(criteria, 1): LISTING_HTML, category_url(criteria, 2): LISTING_HTML}
     client = FakeClient(pages)
 
     listings = Catalog(client).recent_listings(criteria)
-    assert len(listings) == 72
-    assert {url for url, _ in client.requested} == set(pages)
+    assert {url for url, _ in client.requested} == set(pages)  # both pages fetched
+    assert len(listings) == 36                                 # duplicates dropped, not 72
+    assert len({listing.listing_id for listing in listings}) == 36
 
 
 def test_with_details_adds_description_and_dimensions():

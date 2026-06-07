@@ -10,9 +10,8 @@ prose. We recognise two shapes, in order of confidence:
 Units (см/мм/м) are converted to centimetres. A unit-less decimal below 10 is read as
 metres, because sellers write "высота 2.30" meaning 2.3 m; a plain integer stays in cm.
 
-Single-letter labels (ш/в/г) are matched conservatively: attached to the number ("Ш120")
-or spaced only when an explicit unit follows ("В 220 см"), so prose like "в 2020 году"
-is never misread as a height.
+Single-letter labels (ш/в/г) are matched only when an explicit unit follows them
+("Ш120см" or "В 220 см"), so prose like "в2020 году" is never misread as a height.
 """
 
 import re
@@ -41,7 +40,7 @@ def _axis_patterns():
         short = _SHORT_LABELS[axis]
         long_label = rf'{_NOT_PRECEDED_BY_LETTER}(?:{long_labels})\.?\s*[:=-]?\s*({_NUMBER})\s*({_UNIT})?'
         short_spaced = rf'{_NOT_PRECEDED_BY_LETTER}{short}\.?\s*[:=-]?\s+({_NUMBER})\s*({_UNIT})'
-        short_attached = rf'{_NOT_PRECEDED_BY_LETTER}{short}[.:=-]?({_NUMBER})\s*({_UNIT})?'
+        short_attached = rf'{_NOT_PRECEDED_BY_LETTER}{short}[.:=-]?({_NUMBER})\s*({_UNIT})'
         compiled[axis] = [re.compile(p, re.IGNORECASE) for p in (long_label, short_spaced, short_attached)]
     return compiled
 

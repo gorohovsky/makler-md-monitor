@@ -38,6 +38,20 @@ def test_format_handles_missing_price():
     assert 'цена не указана' in format_listing(make_listing(price=None, currency=None))
 
 
+def test_format_shows_zero_price_as_a_price_not_as_missing():
+    text = format_listing(make_listing(price=0.0, currency='rub'))
+
+    assert 'цена не указана' not in text
+    assert '0 RUB' in text
+
+
+def test_format_large_price_is_readable_not_scientific():
+    text = format_listing(make_listing(price=1300000.0, currency='rub'))
+
+    assert '1 300 000 RUB' in text
+    assert 'e+' not in text
+
+
 def test_console_notifier_writes_formatted_text():
     written = []
     ConsoleNotifier(output=written.append).notify(make_listing())

@@ -27,8 +27,11 @@ def parse_price(text):
 
     lowered = text.lower()
     currency = next((code for token, code in _CURRENCY_TOKENS if token in lowered), None)
-    digits = re.sub(r'\D', '', text)
-    return (float(digits) if digits else None, currency)
+    # Take the first number only (digits + thousands spaces), so ranges/cents/phones
+    # like "1 000 - 2 000" or "450,50" do not fuse into one giant amount.
+    number = re.search(r'\d[\d\s]*', text)
+    amount = float(re.sub(r'\s', '', number.group())) if number else None
+    return (amount, currency)
 
 
 def _text_or_none(node):
@@ -50,7 +53,7 @@ def _card_to_listing(article, base_url):
     image_tag = image_block.find('img') if image_block else None
     return Listing(
         listing_id=match.group(1),
-        title=(link.get('title') or link.get_text(strip=True)).strip(),
+        title=(link.get('title') or '').strip() or link.get_text(strip=True),
         url=urljoin(base_url, href),
         price=price,
         currency=currency,

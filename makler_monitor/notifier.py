@@ -52,10 +52,11 @@ def build_notifier(settings):
 
 
 def _format_price(listing):
-    if not listing.price:
+    if listing.price is None:
         return 'цена не указана'
 
-    return f'{listing.price:g} {(listing.currency or "").upper()}'.strip()
+    amount = f'{listing.price:,.0f}'.replace(',', ' ')
+    return f'{amount} {(listing.currency or "").upper()}'.strip()
 
 
 def _format_dimensions(dimensions):

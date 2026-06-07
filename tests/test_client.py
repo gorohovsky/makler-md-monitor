@@ -79,6 +79,13 @@ def test_respects_retry_after_header():
     assert max(sleeps) >= 7
 
 
+def test_respects_fractional_retry_after_header():
+    client, _, sleeps = build([FakeResponse(503, headers={'Retry-After': '7.5'}), FakeResponse(200)])
+
+    client.get('https://makler.md/x')
+    assert max(sleeps) >= 7
+
+
 def test_raises_after_exhausting_retries():
     client, session, _ = build([FakeResponse(503), FakeResponse(503), FakeResponse(503)])
 
