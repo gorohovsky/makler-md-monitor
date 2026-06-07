@@ -62,7 +62,7 @@ def test_minimal_config_applies_defaults(tmp_path):
     assert criteria.language == 'ru'
     assert criteria.cities == frozenset()
     assert criteria.price_rates == {}
-    assert criteria.max_pages == 1
+    assert criteria.max_pages == 5
     assert settings.notifier == 'console'
     assert settings.check_interval_min_seconds == 1200
 

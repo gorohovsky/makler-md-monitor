@@ -9,13 +9,15 @@ from makler_monitor.storage import SeenStore
 
 
 class FakeCatalog:
-    def __init__(self, cards, details):
-        self._cards = cards
+    def __init__(self, pages, details):
+        self._pages = pages
         self._details = details
         self.detailed_ids = []
+        self.fetched_pages = []
 
-    def recent_listings(self, criteria):
-        return list(self._cards)
+    def listings_on_page(self, criteria, page):
+        self.fetched_pages.append(page)
+        return list(self._pages[page - 1]) if page <= len(self._pages) else []
 
     def with_details(self, card):
         self.detailed_ids.append(card.listing_id)
@@ -50,8 +52,8 @@ def detailed(card, dimensions):
     return dataclasses.replace(card, description='шкаф', dimensions=dimensions)
 
 
-def make_criteria():
-    return SearchCriteria(
+def make_criteria(**overrides):
+    base = dict(
         category='c',
         cities=frozenset({'Тирасполь'}),
         price_min=50,
@@ -62,13 +64,18 @@ def make_criteria():
         max_depth_cm=50,
         keywords=('шкаф',)
     )
+    return SearchCriteria(**{**base, **overrides})
 
 
-def build(cards, details, tmp_path):
-    catalog = FakeCatalog(cards, details)
+def build_paged(pages, details, tmp_path, criteria=None):
+    catalog = FakeCatalog(pages, details)
     notifier = FakeNotifier()
     store = SeenStore(tmp_path / 'seen.json')
-    return Monitor(catalog, store, notifier, make_criteria()), catalog, notifier, store
+    return Monitor(catalog, store, notifier, criteria or make_criteria()), catalog, notifier, store
+
+
+def build(page_one_cards, details, tmp_path):
+    return build_paged([page_one_cards], details, tmp_path)
 
 
 def test_notifies_new_matching_listing(tmp_path):
@@ -112,6 +119,45 @@ def test_wrong_city_is_skipped_without_fetching_detail(tmp_path):
     assert monitor.check() == []
     assert catalog.detailed_ids == []
     assert store.is_seen('3')
+
+
+def test_paginates_through_new_listings_and_stops_at_a_seen_page(tmp_path):
+    first, second = make_card('1'), make_card('2')
+    details = {'1': detailed(first, Dimensions(120, 220, 45)), '2': detailed(second, Dimensions(120, 220, 45))}
+    monitor, catalog, _, _ = build_paged([[first], [second], []], details, tmp_path)
+
+    result = monitor.check()
+    assert {listing.listing_id for listing in result} == {'1', '2'}   # caught both pages
+    assert catalog.fetched_pages == [1, 2, 3]                          # stopped at the empty page
+
+
+def test_stops_without_fetching_the_next_page_once_caught_up(tmp_path):
+    seen, unreached = make_card('1'), make_card('2')
+    details = {'1': detailed(seen, Dimensions(120, 220, 45))}
+    monitor, catalog, _, store = build_paged([[seen], [unreached]], details, tmp_path)
+    store.mark_seen('1')
+
+    assert monitor.check() == []
+    assert catalog.fetched_pages == [1]   # page 2 never fetched: page 1 had nothing new
+
+
+def test_respects_the_max_pages_safety_cap(tmp_path):
+    cards = [make_card(str(index)) for index in range(1, 6)]
+    details = {card.listing_id: detailed(card, Dimensions(120, 220, 45)) for card in cards}
+    monitor, catalog, _, _ = build_paged([[card] for card in cards], details, tmp_path,
+                                         criteria=make_criteria(max_pages=3))
+
+    monitor.check()
+    assert catalog.fetched_pages == [1, 2, 3]   # capped at 3 despite more new pages
+
+
+def test_does_not_process_a_listing_repeated_across_pages(tmp_path):
+    card = make_card('1')
+    details = {'1': detailed(card, Dimensions(120, 220, 45))}
+    monitor, catalog, _, _ = build_paged([[card], [card], []], details, tmp_path)
+
+    assert len(monitor.check()) == 1
+    assert catalog.detailed_ids == ['1']   # detailed once, not twice
 
 
 def test_second_check_does_not_renotify(tmp_path):

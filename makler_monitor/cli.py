@@ -59,7 +59,7 @@ def _watch(monitor, settings):
 
 
 def _list_cities(catalog, criteria):
-    cities = sorted({listing.city for listing in catalog.recent_listings(criteria) if listing.city})
+    cities = sorted({listing.city for listing in catalog.listings_on_page(criteria, 1) if listing.city})
     print('Cities currently listed in this category and region:')
     for city in cities:
         print(f'  {city}')

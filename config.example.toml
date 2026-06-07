@@ -38,8 +38,9 @@ max_height_cm = 230
 max_depth_cm = 50
 unknown_dimension_ok = true
 
-# How many category pages to scan per check (newest listings sit on page 1).
-max_pages = 1
+# Safety cap on pages scanned per check; scanning stops earlier at the first page with no
+# new listings, so a multi-page burst is caught without raising this.
+max_pages = 5
 
 # Conversion rates so listings in OTHER currencies are range-checked too, given as
 # "price_currency units per 1 unit of the listed currency" (here: PMR rubles per unit).

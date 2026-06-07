@@ -17,17 +17,9 @@ class Catalog:
     def __init__(self, client):
         self._client = client
 
-    def recent_listings(self, criteria):
-        """De-duplicated listing cards from the first ``criteria.max_pages`` category pages."""
-        seen_ids = set()
-        listings = []
-        for page in range(1, criteria.max_pages + 1):
-            for listing in parse_listings(self._client.get(category_url(criteria, page))):
-                if listing.listing_id not in seen_ids:
-                    seen_ids.add(listing.listing_id)
-                    listings.append(listing)
-
-        return listings
+    def listings_on_page(self, criteria, page):
+        """Parse the listing cards on one category page."""
+        return parse_listings(self._client.get(category_url(criteria, page)))
 
     def with_details(self, card):
         """Fetch a listing's detail page and fill in its description and dimensions."""

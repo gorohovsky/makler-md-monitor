@@ -13,8 +13,8 @@ The region defaults to **Приднестровье / Transnistria** and the sit
 
 ## How it works
 
-Each check fetches the category's first page(s), keeps the listings it hasn't seen before,
-drops those in the wrong city or outside the price range, then opens the detail page of each
+Each check scans the category newest-first, page by page, until it reaches a page with no
+new listings; it drops those in the wrong city or outside the price range, then opens the detail page of each
 remaining candidate to read the full description, parse its dimensions, and apply the
 keyword and size filters. New matches go to your notifier and are remembered, so you are
 notified only once.

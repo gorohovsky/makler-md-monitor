@@ -5,6 +5,10 @@ Detail pages are fetched only for cards that already pass the card-level filters
 Keyword and dimension filters need the full description, so they run after the
 detail fetch.
 
+Pages are scanned newest-first and only as far as needed: scanning stops at the first
+page with no unseen listings (the rest are older and already seen), so a multi-page
+burst of new listings is caught without raising ``max_pages``, which is only a safety cap.
+
 Every fully-evaluated card is recorded as seen (matched or not) so it is notified
 only once, even across separate runs. Recording happens in a ``finally`` so a
 mid-batch failure never loses prior progress; a card whose detail fetch fails
@@ -24,13 +28,10 @@ class Monitor:
 
     def check(self):
         """Return (and notify) the new listings that match the criteria."""
-        new_cards = [card for card in self._catalog.recent_listings(self._criteria)
-                     if not self._store.is_seen(card.listing_id)]
-
         found = []
         handled = []
         try:
-            for card in new_cards:
+            for card in self._unseen_cards():
                 try:
                     listing = self._evaluate(card)
                 except FetchError:
@@ -45,6 +46,19 @@ class Monitor:
             self._store.add_many(handled)
 
         return found
+
+    def _unseen_cards(self):
+        """Yield unseen cards page by page, stopping at the first page that has none."""
+        yielded = set()
+        for page in range(1, self._criteria.max_pages + 1):
+            fresh = [card for card in self._catalog.listings_on_page(self._criteria, page)
+                     if card.listing_id not in yielded and not self._store.is_seen(card.listing_id)]
+            if not fresh:
+                return
+
+            for card in fresh:
+                yielded.add(card.listing_id)
+                yield card
 
     def _evaluate(self, card):
         """The matching detailed listing, or None if it does not match; may raise FetchError."""
