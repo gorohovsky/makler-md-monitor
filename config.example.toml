@@ -12,6 +12,10 @@ category = "furniture-and-interior/furniture/wall-units"
 # Region — a URL segment. "transnistria" is Приднестровье / Prednistrovie (the default).
 region = "transnistria"
 
+# Site language for the URL: "ru" (default), "ro", or "en". Only the page chrome differs;
+# the listings themselves are the same text whichever you pick.
+language = "ru"
+
 # Optional: restrict to specific cities (Russian names exactly as shown on listings).
 # Run `list-cities` to discover what is available. Omit or leave empty for all cities.
 cities = ["Тирасполь", "Бендеры"]

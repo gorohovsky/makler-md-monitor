@@ -70,6 +70,7 @@ language and region, e.g. for
 [search]
 category = "furniture-and-interior/furniture/wall-units"
 region = "transnistria"            # Приднестровье (default)
+language = "ru"                    # ru (default) | ro | en
 cities = ["Тирасполь", "Бендеры"]  # optional; exact Russian names from the site
 keywords = ["шкаф", "купе"]        # optional
 price_max = 8000

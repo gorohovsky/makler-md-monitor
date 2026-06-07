@@ -68,6 +68,13 @@ def test_minimal_config_applies_defaults(tmp_path):
     assert settings.check_interval_min_seconds == 1200
 
 
+def test_loads_region_and_language(tmp_path):
+    config = '[search]\ncategory = "c"\nregion = "chisinau"\nlanguage = "ro"\n'
+    criteria, _ = load_config(write_config(tmp_path, config))
+
+    assert (criteria.region, criteria.language) == ('chisinau', 'ro')
+
+
 def test_missing_category_raises(tmp_path):
     with pytest.raises(ValueError):
         load_config(write_config(tmp_path, '[search]\nregion = "transnistria"\n'))
