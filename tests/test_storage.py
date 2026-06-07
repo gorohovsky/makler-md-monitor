@@ -1,6 +1,6 @@
 """Persistence of already-seen announcement IDs."""
 
-from makler_monitor.storage import SeenStore
+from makler_monitor.storage import BacklogCursor, SeenStore
 
 
 def test_unknown_id_is_not_seen(tmp_path):
@@ -49,3 +49,30 @@ def test_creates_missing_parent_directories(tmp_path):
     SeenStore(path).mark_seen('1')
 
     assert path.exists()
+
+
+def test_cursor_defaults_to_page_one(tmp_path):
+    assert BacklogCursor(tmp_path / 'seen.cursor').page() == 1
+
+
+def test_cursor_persists_across_instances(tmp_path):
+    path = tmp_path / 'seen.cursor'
+    BacklogCursor(path).set_page(4)
+
+    assert BacklogCursor(path).page() == 4
+
+
+def test_cursor_corrupt_file_defaults_to_page_one(tmp_path):
+    path = tmp_path / 'seen.cursor'
+    path.write_text('not a number', encoding='utf-8')
+
+    assert BacklogCursor(path).page() == 1
+
+
+def test_cursor_clamps_non_positive_values_to_one(tmp_path):
+    path = tmp_path / 'seen.cursor'
+
+    path.write_text('0', encoding='utf-8')
+    assert BacklogCursor(path).page() == 1
+    path.write_text('-3', encoding='utf-8')
+    assert BacklogCursor(path).page() == 1

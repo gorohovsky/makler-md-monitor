@@ -5,7 +5,7 @@ import dataclasses
 from makler_monitor.client import FetchError
 from makler_monitor.models import Dimensions, Listing, SearchCriteria
 from makler_monitor.monitor import Monitor
-from makler_monitor.storage import SeenStore
+from makler_monitor.storage import BacklogCursor, SeenStore
 
 
 class FakeCatalog:
@@ -71,7 +71,9 @@ def build_paged(pages, details, tmp_path, criteria=None):
     catalog = FakeCatalog(pages, details)
     notifier = FakeNotifier()
     store = SeenStore(tmp_path / 'seen.json')
-    return Monitor(catalog, store, notifier, criteria or make_criteria()), catalog, notifier, store
+    cursor = BacklogCursor(tmp_path / 'seen.cursor')
+    monitor = Monitor(catalog, store, cursor, notifier, criteria or make_criteria())
+    return monitor, catalog, notifier, store
 
 
 def build(page_one_cards, details, tmp_path):
@@ -121,34 +123,61 @@ def test_wrong_city_is_skipped_without_fetching_detail(tmp_path):
     assert store.is_seen('3')
 
 
-def test_paginates_through_new_listings_and_stops_at_a_seen_page(tmp_path):
+def test_scans_page_one_plus_the_backfill_batch(tmp_path):
+    cards = [make_card(str(index)) for index in range(1, 4)]
+    details = {card.listing_id: detailed(card, Dimensions(120, 220, 45)) for card in cards}
+    monitor, catalog, _, _ = build_paged([[card] for card in cards], details, tmp_path)
+
+    result = monitor.check()   # cursor at 1, batch of 2 -> pages 1 and 2
+    assert {listing.listing_id for listing in result} == {'1', '2'}
+    assert catalog.fetched_pages == [1, 2]
+
+
+def test_backfill_cursor_advances_across_runs(tmp_path):
+    cards = [make_card(str(index)) for index in range(1, 6)]
+    details = {card.listing_id: detailed(card, Dimensions(120, 220, 45)) for card in cards}
+    monitor, catalog, _, _ = build_paged([[card] for card in cards], details, tmp_path)
+
+    monitor.check()   # pages 1, 2
+    monitor.check()   # page 1 again (for new) plus backfill 3, 4
+    assert catalog.fetched_pages == [1, 2, 1, 3, 4]
+
+
+def test_cursor_wraps_at_the_end_of_the_category(tmp_path):
     first, second = make_card('1'), make_card('2')
     details = {'1': detailed(first, Dimensions(120, 220, 45)), '2': detailed(second, Dimensions(120, 220, 45))}
-    monitor, catalog, _, _ = build_paged([[first], [second], []], details, tmp_path)
+    monitor, catalog, _, _ = build_paged([[first], [second]], details, tmp_path)   # 2 real pages
 
-    result = monitor.check()
-    assert {listing.listing_id for listing in result} == {'1', '2'}   # caught both pages
-    assert catalog.fetched_pages == [1, 2, 3]                          # stopped at the empty page
-
-
-def test_stops_without_fetching_the_next_page_once_caught_up(tmp_path):
-    seen, unreached = make_card('1'), make_card('2')
-    details = {'1': detailed(seen, Dimensions(120, 220, 45))}
-    monitor, catalog, _, store = build_paged([[seen], [unreached]], details, tmp_path)
-    store.mark_seen('1')
-
-    assert monitor.check() == []
-    assert catalog.fetched_pages == [1]   # page 2 never fetched: page 1 had nothing new
+    monitor.check()                  # pages 1, 2 -> cursor advances to 3
+    monitor.check()                  # pages 1, 3; page 3 is empty -> wrap to 1
+    catalog.fetched_pages.clear()
+    monitor.check()                  # restarts at pages 1, 2
+    assert catalog.fetched_pages == [1, 2]
 
 
-def test_respects_the_max_pages_safety_cap(tmp_path):
+def test_max_pages_caps_the_backfill_depth(tmp_path):
     cards = [make_card(str(index)) for index in range(1, 6)]
     details = {card.listing_id: detailed(card, Dimensions(120, 220, 45)) for card in cards}
     monitor, catalog, _, _ = build_paged([[card] for card in cards], details, tmp_path,
-                                         criteria=make_criteria(max_pages=3))
+                                         criteria=make_criteria(max_pages=2, pages_per_batch=1))
 
-    monitor.check()
-    assert catalog.fetched_pages == [1, 2, 3]   # capped at 3 despite more new pages
+    monitor.check()                  # cursor 1 -> page 1
+    monitor.check()                  # cursor 2 -> pages 1, 2; next would be 3 > cap -> wrap
+    catalog.fetched_pages.clear()
+    monitor.check()                  # cursor 1 -> page 1 only
+    assert catalog.fetched_pages == [1]   # page 3 is never scanned (beyond max_pages = 2)
+
+
+def test_max_pages_drops_batch_pages_beyond_the_cap(tmp_path):
+    cards = [make_card(str(index)) for index in range(1, 7)]
+    details = {card.listing_id: detailed(card, Dimensions(120, 220, 45)) for card in cards}
+    monitor, catalog, _, _ = build_paged([[card] for card in cards], details, tmp_path,
+                                         criteria=make_criteria(max_pages=4, pages_per_batch=3))
+
+    monitor.check()                  # cursor 1 -> pages 1,2,3
+    catalog.fetched_pages.clear()
+    monitor.check()                  # cursor 4 -> batch 4,5,6 but cap 4 keeps only [1, 4]
+    assert catalog.fetched_pages == [1, 4]
 
 
 def test_does_not_process_a_listing_repeated_across_pages(tmp_path):

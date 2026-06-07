@@ -3,13 +3,14 @@
 import argparse
 import random
 import time
+from pathlib import Path
 
 from .catalog import Catalog
 from .client import BrowserClient
 from .config import load_config
 from .monitor import Monitor
 from .notifier import build_notifier
-from .storage import SeenStore
+from .storage import BacklogCursor, SeenStore
 
 
 def main(argv=None):
@@ -21,7 +22,9 @@ def main(argv=None):
         _list_cities(catalog, criteria)
         return
 
-    monitor = Monitor(catalog, SeenStore(settings.state_path), build_notifier(settings), criteria)
+    store = SeenStore(settings.state_path)
+    cursor = BacklogCursor(Path(settings.state_path).with_suffix('.cursor'))
+    monitor = Monitor(catalog, store, cursor, build_notifier(settings), criteria)
     if args.command == 'check':
         found = monitor.check()
         print(f'{len(found)} new match(es).')

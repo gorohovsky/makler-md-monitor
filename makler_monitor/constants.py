@@ -12,10 +12,8 @@ DEFAULT_LANGUAGE = 'ru'
 # "transnistria" is Приднестровье / Prednistrovie — the project default region.
 DEFAULT_REGION = 'transnistria'
 
-# Safety cap on pages scanned per check. Scanning stops earlier — at the first page with
-# no new listings — since listings are newest-first, so once a page is fully seen the rest
-# are too. This caps the first run and any runaway; steady state usually stops after page 1.
-DEFAULT_MAX_PAGES = 5
+# Backlog pages swept per check (page 1 is always also scanned for new listings).
+DEFAULT_PAGES_PER_BATCH = 2
 
 # Anti-detection HTTP client defaults.
 DEFAULT_MIN_DELAY_SECONDS = 3.0

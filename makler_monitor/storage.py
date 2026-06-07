@@ -41,3 +41,22 @@ class SeenStore:
         tmp_path = self._path.with_name(f'{self._path.name}.tmp')
         tmp_path.write_text(json.dumps(sorted(self._seen)), encoding='utf-8')
         os.replace(tmp_path, self._path)
+
+
+class BacklogCursor:
+    """Remembers which page the backlog sweep resumes from, persisted across runs."""
+
+    def __init__(self, path):
+        self._path = Path(path)
+
+    def page(self):
+        try:
+            return max(1, int(self._path.read_text(encoding='utf-8')))
+        except (FileNotFoundError, ValueError):
+            return 1
+
+    def set_page(self, page):
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = self._path.with_name(f'{self._path.name}.tmp')
+        tmp_path.write_text(str(page), encoding='utf-8')
+        os.replace(tmp_path, self._path)

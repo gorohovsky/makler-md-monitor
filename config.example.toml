@@ -38,9 +38,14 @@ max_height_cm = 230
 max_depth_cm = 50
 unknown_dimension_ok = true
 
-# Safety cap on pages scanned per check; scanning stops earlier at the first page with no
-# new listings, so a multi-page burst is caught without raising this.
-max_pages = 5
+# Backlog pages swept per check; page 1 is always also scanned for new listings, and a
+# saved cursor advances this many pages deeper each run, wrapping at the end of the category.
+pages_per_batch = 2
+
+# Optional cap on how deep the backlog sweep goes; omit to cover the whole category over
+# time. On a very busy category, set it so the sweep wraps regularly and keeps pace with new
+# postings (listings are tracked by ID, so nothing is ever double-processed).
+# max_pages = 20
 
 # Conversion rates so listings in OTHER currencies are range-checked too, given as
 # "price_currency units per 1 unit of the listed currency" (here: PMR rubles per unit).

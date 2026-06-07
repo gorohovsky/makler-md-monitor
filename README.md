@@ -13,8 +13,10 @@ The region defaults to **Приднестровье / Transnistria** and the sit
 
 ## How it works
 
-Each check scans the category newest-first, page by page, until it reaches a page with no
-new listings; it drops those in the wrong city or outside the price range, then opens the detail page of each
+Each check scans page 1 (where new listings appear) and advances a saved cursor a few pages
+deeper into the backlog (`pages_per_batch`), so new postings are caught within one interval
+while the whole category is covered over time. It drops those in the wrong city or outside
+the price range, then opens the detail page of each
 remaining candidate to read the full description, parse its dimensions, and apply the
 keyword and size filters. New matches go to your notifier and are remembered, so you are
 notified only once.
@@ -76,6 +78,8 @@ min_width_cm = 90                  # each axis takes a min, a max, or both (a ra
 max_width_cm = 130
 max_height_cm = 230
 max_depth_cm = 50
+pages_per_batch = 2                # backlog pages swept per run (page 1 always scanned too)
+# max_pages = 20                   # optional cap on sweep depth; omit to cover everything
 
 # convert other-currency prices into price_currency (price_currency per 1 unit):
 [search.price_rates]

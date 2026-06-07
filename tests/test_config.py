@@ -17,6 +17,7 @@ min_width_cm = 90
 max_width_cm = 130
 max_height_cm = 230
 max_depth_cm = 50
+pages_per_batch = 3
 max_pages = 2
 
 [search.price_rates]
@@ -48,7 +49,7 @@ def test_loads_full_config(tmp_path):
     assert (criteria.price_min, criteria.price_max, criteria.price_currency) == (50, 200, 'usd')
     assert (criteria.max_width_cm, criteria.max_height_cm, criteria.max_depth_cm) == (130, 230, 50)
     assert criteria.min_width_cm == 90
-    assert criteria.max_pages == 2
+    assert (criteria.pages_per_batch, criteria.max_pages) == (3, 2)
     assert criteria.price_rates == {'usd': 16.3, 'eur': 19.16, 'lei': 0.96}
     assert (settings.check_interval_min_seconds, settings.check_interval_max_seconds) == (600, 1200)
     assert settings.notifier == 'telegram'
@@ -62,7 +63,7 @@ def test_minimal_config_applies_defaults(tmp_path):
     assert criteria.language == 'ru'
     assert criteria.cities == frozenset()
     assert criteria.price_rates == {}
-    assert criteria.max_pages == 5
+    assert (criteria.pages_per_batch, criteria.max_pages) == (2, None)
     assert settings.notifier == 'console'
     assert settings.check_interval_min_seconds == 1200
 
@@ -99,6 +100,16 @@ def test_rejects_inverted_price_range(tmp_path):
     config = '[search]\ncategory = "c"\nprice_min = 9000\nprice_max = 8000\n'
     with pytest.raises(ValueError):
         load_config(write_config(tmp_path, config))
+
+
+def test_rejects_non_positive_pages_per_batch(tmp_path):
+    with pytest.raises(ValueError):
+        load_config(write_config(tmp_path, '[search]\ncategory = "c"\npages_per_batch = 0\n'))
+
+
+def test_rejects_non_positive_max_pages(tmp_path):
+    with pytest.raises(ValueError):
+        load_config(write_config(tmp_path, '[search]\ncategory = "c"\nmax_pages = 0\n'))
 
 
 def test_blank_optional_strings_become_none(tmp_path):

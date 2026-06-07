@@ -7,8 +7,8 @@ from .constants import (
     DEFAULT_CHECK_INTERVAL_MIN_SECONDS,
     DEFAULT_LANGUAGE,
     DEFAULT_MAX_DELAY_SECONDS,
-    DEFAULT_MAX_PAGES,
     DEFAULT_MAX_RETRIES,
+    DEFAULT_PAGES_PER_BATCH,
     DEFAULT_MIN_DELAY_SECONDS,
     DEFAULT_REGION,
     DEFAULT_REQUEST_TIMEOUT_SECONDS
@@ -70,7 +70,8 @@ class SearchCriteria:
     min_depth_cm: float | None = None
     max_depth_cm: float | None = None
     unknown_dimension_ok: bool = True
-    max_pages: int = DEFAULT_MAX_PAGES
+    pages_per_batch: int = DEFAULT_PAGES_PER_BATCH
+    max_pages: int | None = None
 
 
 @dataclass(frozen=True)

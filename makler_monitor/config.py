@@ -51,6 +51,10 @@ def _validate_criteria(criteria):
         if isinstance(rate, bool) or not isinstance(rate, (int, float)) or rate <= 0:
             raise ValueError(f"price_rates['{currency}'] must be a positive number, got {rate!r}")
 
+    _require_positive_int('pages_per_batch', criteria.pages_per_batch)
+    if criteria.max_pages is not None:
+        _require_positive_int('max_pages', criteria.max_pages)
+
     _check_range('price_min', criteria.price_min, 'price_max', criteria.price_max)
     for axis in ('width', 'height', 'depth'):
         _check_range(f'min_{axis}_cm', getattr(criteria, f'min_{axis}_cm'),
@@ -60,3 +64,8 @@ def _validate_criteria(criteria):
 def _check_range(min_name, minimum, max_name, maximum):
     if minimum is not None and maximum is not None and minimum > maximum:
         raise ValueError(f'{min_name} ({minimum}) must not exceed {max_name} ({maximum})')
+
+
+def _require_positive_int(name, value):
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f'{name} must be a positive integer, got {value!r}')

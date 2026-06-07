@@ -1,18 +1,15 @@
-"""Run one check cycle: find unseen listings, keep the matches, notify, record.
+"""Run one check cycle: catch new listings on page 1 and advance the backlog sweep.
 
-Detail pages are fetched only for cards that already pass the card-level filters
-(city and price), so a wrong-city or over-budget listing never costs a request.
-Keyword and dimension filters need the full description, so they run after the
-detail fetch.
+Page 1 is scanned every run so newly-posted listings (which appear at the top) are caught
+within one interval. A persisted cursor also sweeps the rest of the category a few pages
+per run (``pages_per_batch``), wrapping at the end, so the whole backlog is covered over
+time. ``max_pages`` optionally caps the sweep depth; unset means the entire category.
 
-Pages are scanned newest-first and only as far as needed: scanning stops at the first
-page with no unseen listings (the rest are older and already seen), so a multi-page
-burst of new listings is caught without raising ``max_pages``, which is only a safety cap.
-
-Every fully-evaluated card is recorded as seen (matched or not) so it is notified
-only once, even across separate runs. Recording happens in a ``finally`` so a
-mid-batch failure never loses prior progress; a card whose detail fetch fails
-transiently is left unseen and retried on the next cycle.
+Each listing is processed once (tracked by ID), wherever the sweep finds it; already-seen
+listings are skipped before any detail fetch. Full backlog coverage assumes the sweep keeps
+pace with new postings — on a very busy category set ``max_pages`` to force regular wraps.
+Recording happens in a ``finally`` so a mid-batch failure never loses prior progress; a card
+whose detail fetch fails transiently is retried next cycle.
 """
 
 from .client import FetchError
@@ -20,45 +17,62 @@ from .filters import card_matches, detail_matches
 
 
 class Monitor:
-    def __init__(self, catalog, store, notifier, criteria):
+    def __init__(self, catalog, store, cursor, notifier, criteria):
         self._catalog = catalog
         self._store = store
+        self._cursor = cursor
         self._notifier = notifier
         self._criteria = criteria
 
     def check(self):
         """Return (and notify) the new listings that match the criteria."""
+        start_page = self._cursor.page()
         found = []
         handled = []
+        seen_now = set()
+        reached_end = False
         try:
-            for card in self._unseen_cards():
-                try:
-                    listing = self._evaluate(card)
-                except FetchError:
-                    continue  # transient fetch failure: stay unseen, retry next cycle
+            for page in self._pages_to_scan(start_page):
+                cards = self._catalog.listings_on_page(self._criteria, page)
+                if not cards and page != 1:
+                    reached_end = True  # past the last page: the sweep has covered the category
+                    break
 
-                if listing is not None:
-                    self._notifier.notify(listing)
-                    found.append(listing)
+                for card in cards:
+                    if card.listing_id in seen_now or self._store.is_seen(card.listing_id):
+                        continue
 
-                handled.append(card.listing_id)
+                    seen_now.add(card.listing_id)
+                    try:
+                        listing = self._evaluate(card)
+                    except FetchError:
+                        continue  # not recorded -> retried next cycle
+
+                    if listing is not None:
+                        self._notifier.notify(listing)
+                        found.append(listing)
+
+                    handled.append(card.listing_id)
         finally:
             self._store.add_many(handled)
 
+        # Only advance the cursor on a clean pass; a failed page fetch retries the same batch.
+        self._cursor.set_page(self._next_page(start_page, reached_end))
         return found
 
-    def _unseen_cards(self):
-        """Yield unseen cards page by page, stopping at the first page that has none."""
-        yielded = set()
-        for page in range(1, self._criteria.max_pages + 1):
-            fresh = [card for card in self._catalog.listings_on_page(self._criteria, page)
-                     if card.listing_id not in yielded and not self._store.is_seen(card.listing_id)]
-            if not fresh:
-                return
+    def _pages_to_scan(self, start_page):
+        cap = self._criteria.max_pages
+        batch = range(start_page, start_page + self._criteria.pages_per_batch)
+        pages = [1] + [page for page in batch if cap is None or page <= cap]
+        return sorted(set(pages))
 
-            for card in fresh:
-                yielded.add(card.listing_id)
-                yield card
+    def _next_page(self, start_page, reached_end):
+        cap = self._criteria.max_pages
+        following = start_page + self._criteria.pages_per_batch
+        if reached_end or (cap is not None and following > cap):
+            return 1
+
+        return following
 
     def _evaluate(self, card):
         """The matching detailed listing, or None if it does not match; may raise FetchError."""
