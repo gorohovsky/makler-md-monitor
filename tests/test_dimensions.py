@@ -23,6 +23,12 @@ CASES = [
     ('г.50 в адресе', None, None, None),
     # English labels appear occasionally in seller text.
     ('width 130 cm, height 230 cm, depth 50 cm', 130, 230, 50),
+    # Structured "label, unit: value unit" specs (furniture-store listings).
+    ('Ширина, мм: 2020 мм Глубина, мм: 600 мм Высота, мм: 2260 мм', 202, 226, 60),
+    # ...and when the unit is stated only in the header, fall back to it.
+    ('Глубина, мм: 500', None, None, 50),
+    # Labels separated only by spaces (e.g. after block elements are space-joined).
+    ('Высота 230 см Ширина 160 см', 160, 230, None),
     # Unit conversion: metres and millimetres, decimal point and comma.
     ('высота 2.2 м', None, 220, None),
     ('ширина 1,2 м', 120, None, None),

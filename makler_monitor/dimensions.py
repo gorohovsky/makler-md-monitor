@@ -22,8 +22,9 @@ import re
 from .models import Dimensions
 
 _NUMBER = r'\d+(?:[.,]\d+)?'
+_UNIT_NAMES = r'(?:см|мм|cm|mm|м|m)'
 # A unit token must not run into a longer word ("м" in "метро" is not metres here).
-_UNIT = r'(?:см|мм|cm|mm|м|m)(?![а-яёa-z])'
+_UNIT = rf'{_UNIT_NAMES}(?![а-яёa-z])'
 _UNIT_FACTORS = {'см': 1.0, 'cm': 1.0, 'мм': 0.1, 'mm': 0.1, 'м': 100.0, 'm': 100.0}
 _BARE_VALUE_IS_METRES_BELOW = 10.0
 
@@ -41,9 +42,12 @@ def _axis_patterns():
     compiled = {}
     for axis, long_labels in _LONG_LABELS.items():
         short = _SHORT_LABELS[axis]
-        long_label = rf'{_NOT_PRECEDED_BY_LETTER}(?:{long_labels})\.?\s*[:=-]?\s*({_NUMBER})\s*({_UNIT})?'
-        short_spaced = rf'{_NOT_PRECEDED_BY_LETTER}{short}\.?\s*[:=-]?\s+({_NUMBER})\s*({_UNIT})'
-        short_attached = rf'{_NOT_PRECEDED_BY_LETTER}{short}[.:=-]?({_NUMBER})\s*({_UNIT})'
+        # The optional ", мм" annotation matches store-style specs like "Ширина, мм: 2020 мм";
+        # its unit is used when the value itself carries none ("Глубина, мм: 500" -> 50 cm).
+        long_label = (rf'{_NOT_PRECEDED_BY_LETTER}(?:{long_labels})(?:\s*,\s*(?P<annot>{_UNIT_NAMES}))?'
+                      rf'\.?\s*[:=-]?\s*(?P<value>{_NUMBER})\s*(?P<unit>{_UNIT})?')
+        short_spaced = rf'{_NOT_PRECEDED_BY_LETTER}{short}\.?\s*[:=-]?\s+(?P<value>{_NUMBER})\s*(?P<unit>{_UNIT})'
+        short_attached = rf'{_NOT_PRECEDED_BY_LETTER}{short}[.:=-]?(?P<value>{_NUMBER})\s*(?P<unit>{_UNIT})'
         compiled[axis] = [re.compile(p, re.IGNORECASE) for p in (long_label, short_spaced, short_attached)]
     return compiled
 
@@ -75,7 +79,8 @@ def _labelled(text):
         for pattern in patterns:
             match = pattern.search(text)
             if match:
-                found[axis] = _to_cm(match.group(1), match.group(2))
+                unit = match.group('unit') or match.groupdict().get('annot')
+                found[axis] = _to_cm(match.group('value'), unit)
                 break
 
     return found

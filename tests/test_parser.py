@@ -70,6 +70,21 @@ def test_parse_description_from_detail_page():
     assert parse_description(DETAIL_HTML) == expected
 
 
+def test_card_snippet_space_separates_block_elements():
+    card = (
+        '<article id="tr_an-9">'
+        '<a class="ls-detail_anUrl" href="/ru/x/an/9" title="t"><span>t</span></a>'
+        '<p class="ls-detail_anText"><div class="subfir">отличное<br/>Высота 230 см</div></p>'
+        '</article>'
+    )
+    assert parse_listings(card)[0].snippet == 'отличное Высота 230 см'
+
+
+def test_parse_description_space_separates_block_elements():
+    html = '<div id="anText"><div>В отличном состоянии</div><div>Высота 230 см</div><div>Ширина 160 см</div></div>'
+    assert parse_description(html) == 'В отличном состоянии Высота 230 см Ширина 160 см'
+
+
 def test_parse_description_falls_back_to_og_meta():
     html = '<html><head><meta property="og:description" content="Шкаф 120x220x50"></head><body></body></html>'
     assert parse_description(html) == 'Шкаф 120x220x50'

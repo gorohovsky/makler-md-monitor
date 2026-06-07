@@ -34,11 +34,16 @@ def parse_price(text):
     return (amount, currency)
 
 
+def _node_text(node):
+    """Text of a node, with block/inline boundaries space-joined so words never glue."""
+    return node.get_text(separator=' ', strip=True)
+
+
 def _text_or_none(node):
     if node is None:
         return None
 
-    return node.get_text(strip=True) or None
+    return _node_text(node) or None
 
 
 def _card_to_listing(article, base_url):
@@ -76,7 +81,7 @@ def parse_description(html):
     soup = BeautifulSoup(html, _HTML_PARSER)
     node = soup.find(id='anText') or soup.find(attrs={'itemprop': 'description'}) or soup.find('div', class_='ittext')
     if node is not None:
-        return node.get_text(strip=True)
+        return _node_text(node)
 
     meta = soup.find('meta', attrs={'property': 'og:description'}) or soup.find('meta', attrs={'name': 'description'})
     return meta.get('content', '').strip() if meta else ''
