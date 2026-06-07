@@ -10,6 +10,7 @@ The session, sleep function and random source are injectable so the behaviour ca
 tested without real network or real waiting.
 """
 
+import math
 import random
 import time
 
@@ -61,6 +62,7 @@ _RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 _RETRYABLE_EXCEPTIONS = (requests.ConnectionError, requests.Timeout)
 _BACKOFF_BASE_SECONDS = 2.0
 _BACKOFF_JITTER_SECONDS = 1.0
+_MAX_RETRY_AFTER_SECONDS = 300.0
 
 
 class FetchError(Exception):
@@ -113,6 +115,11 @@ class BrowserClient:
 
 def _retry_after_seconds(response):
     try:
-        return float(response.headers.get('Retry-After'))
+        seconds = float(response.headers.get('Retry-After'))
     except (TypeError, ValueError):
         return None
+
+    if not math.isfinite(seconds) or seconds <= 0:
+        return None
+
+    return min(seconds, _MAX_RETRY_AFTER_SECONDS)

@@ -27,8 +27,8 @@ def parse_price(text):
 
     lowered = text.lower()
     currency = next((code for token, code in _CURRENCY_TOKENS if token in lowered), None)
-    # Take the first number only (digits + thousands spaces), so ranges/cents/phones
-    # like "1 000 - 2 000" or "450,50" do not fuse into one giant amount.
+    # makler prices are space-grouped integers ("1 300 руб"); take the first number and
+    # drop any trailing range/cents fragment ("1 000 - 2 000" -> 1000, "450,50" -> 450).
     number = re.search(r'\d[\d\s]*', text)
     amount = float(re.sub(r'\s', '', number.group())) if number else None
     return (amount, currency)

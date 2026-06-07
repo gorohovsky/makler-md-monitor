@@ -47,6 +47,10 @@ CASES = [
     # smallest=depth, middle=width) — the same physical box whatever the written order.
     ('220х50х120', 120, 220, 50),
     ('50х120х220', 120, 220, 50),
+    # A compact triple shares one unit: all-small means metres, a mix means cm — so a
+    # single-digit cm element ("...х4") is not blown up to metres before the sort.
+    ('1.2х2.2х0.5', 120, 220, 50),
+    ('200х60х4', 60, 200, 4),
     # False positives must NOT be read as dimensions.
     ('Продаю шкаф, цена 900 евро, куплен 3 года назад', None, None, None),
     ('Телефон 373 77 875053, звоните', None, None, None),

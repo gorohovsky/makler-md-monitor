@@ -86,11 +86,24 @@ def _compact(text):
     if not match:
         return {}
 
-    unit = match.group(4)
     # Sellers order compact triples inconsistently, so assign by size, not position:
     # smallest is depth, largest is height, the middle value is width.
-    depth, width, height = sorted(_to_cm(match.group(i), unit) for i in (1, 2, 3))
+    depth, width, height = sorted(_compact_values(match))
     return {'width': width, 'height': height, 'depth': depth}
+
+
+def _compact_values(match):
+    """Convert the three numbers as one unit, so a single small cm value is not read as metres."""
+    numbers = [float(match.group(i).replace(',', '.')) for i in (1, 2, 3)]
+    unit = match.group(4)
+    if unit:
+        factor = _UNIT_FACTORS[unit.lower()]
+    elif all(number < _BARE_VALUE_IS_METRES_BELOW for number in numbers):
+        factor = 100.0
+    else:
+        factor = 1.0
+
+    return [round(number * factor, 2) for number in numbers]
 
 
 def parse_dimensions(text):

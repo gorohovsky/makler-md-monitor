@@ -86,6 +86,20 @@ def test_respects_fractional_retry_after_header():
     assert max(sleeps) >= 7
 
 
+def test_invalid_retry_after_never_produces_a_negative_sleep():
+    client, _, sleeps = build([FakeResponse(503, headers={'Retry-After': '-5'}), FakeResponse(200)])
+
+    client.get('https://makler.md/x')
+    assert all(seconds >= 0 for seconds in sleeps)
+
+
+def test_absurd_retry_after_is_capped():
+    client, _, sleeps = build([FakeResponse(503, headers={'Retry-After': '99999999'}), FakeResponse(200)])
+
+    client.get('https://makler.md/x')
+    assert max(sleeps) <= 301
+
+
 def test_raises_after_exhausting_retries():
     client, session, _ = build([FakeResponse(503), FakeResponse(503), FakeResponse(503)])
 
