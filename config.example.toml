@@ -9,7 +9,8 @@
 # use:
 category = "furniture-and-interior/furniture/wall-units"
 
-# Region — a URL segment. "transnistria" is Приднестровье / Prednistrovie (the default).
+# Region — a URL slug. "transnistria" (Приднестровье, default) or "moldova" (all Moldova),
+# or a single city slug such as "tiraspol" / "benderi" (see the README for the full list).
 region = "transnistria"
 
 # Site language for the URL: "ru" (default), "ro", or "en". Only the page chrome differs;

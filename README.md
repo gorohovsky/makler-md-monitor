@@ -93,6 +93,21 @@ lei = 0.96
 Invalid config is rejected at startup with a clear message — a non-positive or non-numeric
 `price_rates` entry, or a `min_*` greater than its `max_*` (or `price_min > price_max`).
 
+### Regions
+
+`region` is the URL **slug** for the area (not a display name). The two top-level options are
+`transnistria` (Приднестровье — the default) and `moldova` (all of Moldova). You can also
+narrow server-side to a single city by its slug, e.g. `region = "tiraspol"`.
+
+Transnistrian city slugs: `tiraspol` (Тирасполь), `benderi` (Бендеры), `ribnita` (Рыбница),
+`duboossari` (Дубоссары), `grigoriopol` (Григориополь), `kamenka` (Каменка), `slobozia`
+(Слободзея), `dnestrovsk` (Днестровск), plus smaller ones like `sucleia`, `ternovka`,
+`parcani`, `maiak`, `krasnoe`. Moldovan cities work the same way (`chisinau`, `balti`,
+`comrat`, `orhei`, …). The slug is simply the area segment in any makler.md URL.
+
+This is separate from `cities = [...]`, which filters **client-side** by the Russian display
+name (`"Тирасполь"`) within whatever `region` you chose.
+
 Discover the city names available in your category/region:
 
 ```bash
