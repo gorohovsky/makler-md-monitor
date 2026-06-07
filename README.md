@@ -126,8 +126,10 @@ Leave `notifier = "console"` to simply print matches to the terminal.
 
 ## Notes and limitations
 
-- **Currency**: listings use different currencies (rub/usd/eur/lei). The price filter only
-  range-checks listings priced in your `price_currency`; others are skipped.
+- **Currency**: listings use different currencies (rub/usd/eur/lei). Set `[search.price_rates]`
+  (price_currency units per 1 unit of each other currency) and the filter converts
+  foreign-priced listings into your `price_currency` before checking the range; a currency
+  with no configured rate is skipped. Rates are static — update them occasionally.
 - **Dimensions** come from free text, so parsing is best-effort. Labelled values
   (`ширина 120 см`) are used as-is; an unlabelled `120x220x50` triple is assigned by size
   (largest = height, smallest = depth, middle = width), since the written order varies — this

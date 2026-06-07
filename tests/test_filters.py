@@ -48,6 +48,23 @@ def test_price_rejects_missing_price_when_filtering():
     assert not price_matches(make_listing(price=None), criteria)
 
 
+def test_price_converts_other_currency_using_rates():
+    criteria = make_criteria(price_max=8000, price_currency='rub', price_rates={'usd': 16.3})
+
+    assert price_matches(make_listing(price=450, currency='usd'), criteria)        # 450 * 16.3 = 7335
+    assert not price_matches(make_listing(price=500, currency='usd'), criteria)    # 500 * 16.3 = 8150
+
+
+def test_price_in_target_currency_ignores_rates():
+    criteria = make_criteria(price_max=8000, price_currency='rub', price_rates={'usd': 16.3})
+    assert price_matches(make_listing(price=7000, currency='rub'), criteria)
+
+
+def test_price_rejects_currency_with_no_configured_rate():
+    criteria = make_criteria(price_max=8000, price_currency='rub', price_rates={'usd': 16.3})
+    assert not price_matches(make_listing(price=100, currency='eur'), criteria)
+
+
 def test_city_no_filter_passes():
     assert city_matches(make_listing(city='Тирасполь'), make_criteria())
 

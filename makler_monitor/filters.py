@@ -13,10 +13,11 @@ def price_matches(listing, criteria):
     if listing.price is None:
         return False
 
-    if criteria.price_currency and listing.currency != criteria.price_currency:
+    amount = _in_target_currency(listing, criteria)
+    if amount is None:
         return False
 
-    return _within(listing.price, criteria.price_min, criteria.price_max)
+    return _within(amount, criteria.price_min, criteria.price_max)
 
 
 def city_matches(listing, criteria):
@@ -64,6 +65,16 @@ def matches(listing, criteria):
 
 def _within(value, minimum, maximum):
     return (minimum is None or value >= minimum) and (maximum is None or value <= maximum)
+
+
+def _in_target_currency(listing, criteria):
+    """The listing price expressed in criteria.price_currency, or None if it can't be."""
+    target = criteria.price_currency
+    if target is None or listing.currency == target:
+        return listing.price
+
+    rate = criteria.price_rates.get(listing.currency)
+    return round(listing.price * rate, 2) if rate is not None else None
 
 
 def _axis_within(value, maximum, unknown_ok):

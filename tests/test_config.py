@@ -18,6 +18,11 @@ max_height_cm = 230
 max_depth_cm = 50
 max_pages = 2
 
+[search.price_rates]
+usd = 16.3
+eur = 19.16
+lei = 0.96
+
 [monitor]
 check_interval_min_seconds = 600
 check_interval_max_seconds = 1200
@@ -42,6 +47,7 @@ def test_loads_full_config(tmp_path):
     assert (criteria.price_min, criteria.price_max, criteria.price_currency) == (50, 200, 'usd')
     assert (criteria.max_width_cm, criteria.max_height_cm, criteria.max_depth_cm) == (130, 230, 50)
     assert criteria.max_pages == 2
+    assert criteria.price_rates == {'usd': 16.3, 'eur': 19.16, 'lei': 0.96}
     assert (settings.check_interval_min_seconds, settings.check_interval_max_seconds) == (600, 1200)
     assert settings.notifier == 'telegram'
     assert (settings.telegram_bot_token, settings.telegram_chat_id) == ('T', 'C')
@@ -53,6 +59,7 @@ def test_minimal_config_applies_defaults(tmp_path):
     assert criteria.region == 'transnistria'
     assert criteria.language == 'ru'
     assert criteria.cities == frozenset()
+    assert criteria.price_rates == {}
     assert criteria.max_pages == 1
     assert settings.notifier == 'console'
     assert settings.check_interval_min_seconds == 1200

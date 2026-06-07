@@ -19,11 +19,11 @@ cities = ["Тирасполь", "Бендеры"]
 # Optional: only notify when the title or description contains one of these words.
 keywords = ["шкаф", "купе"]
 
-# Optional price range. price_currency is one of: rub, usd, eur, lei.
-# Only listings priced in this currency are range-checked.
+# Optional price range, in price_currency (one of: rub, usd, eur, lei). Listings in a
+# different currency are converted via [search.price_rates] below (or skipped if no rate).
 price_min = 0
-price_max = 500
-price_currency = "usd"
+price_max = 8000
+price_currency = "rub"
 
 # Optional maximum dimensions in centimetres, parsed from the free-text description
 # (this is the whole point: makler.md cannot filter on size). A listing passes an axis
@@ -36,6 +36,14 @@ unknown_dimension_ok = true
 
 # How many category pages to scan per check (newest listings sit on page 1).
 max_pages = 1
+
+# Conversion rates so listings in OTHER currencies are range-checked too, given as
+# "price_currency units per 1 unit of the listed currency" (here: PMR rubles per unit).
+# Mid rates from Agroprombank — update occasionally. Omit a currency to skip those listings.
+[search.price_rates]
+usd = 16.3
+eur = 19.16
+lei = 0.96
 
 [monitor]
 # Each wait between checks is drawn at random from this window, so the polling
